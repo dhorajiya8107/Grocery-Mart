@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useRef, useState } from 'react';
 import uploadCategories from '../src/categories';
 import { collection, getDocs, onSnapshot, orderBy, query } from 'firebase/firestore';
