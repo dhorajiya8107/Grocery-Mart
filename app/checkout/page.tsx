@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams  } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, getDoc, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../src/firebase';
@@ -13,8 +13,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import successAnimation from '../../animation/Animation - 1742460011298.json';
-import  Lottie  from 'lottie-react';
+// Import dynamic to lazily load Lottie
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Lottie component - no SSR
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 interface Product {
   id: string;
@@ -26,37 +29,55 @@ interface Product {
   description: string;
 }
 
-const CheckoutPage = () => {
+// Component that uses useSearchParams wrapped in Suspense
+function CheckoutContent() {
   const [cart, setCart] = useState<Product[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('Credit Card');
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
+  const [order, setOrder] = useState<any>(null);
+  const [successAnimation, setSuccessAnimation] = useState<any>(null);
   const router = useRouter();
   const auth = getAuth();
+  
+  // Import useSearchParams here
+  const { useSearchParams } = require('next/navigation');
   const searchParams = useSearchParams();
-  const orderId = searchParams.get('orderId');
-  const [order, setOrder] = useState<any>(null);
+  const orderId = searchParams?.get('orderId');
+  
   const Payment_Methods = ['Credit Card', 'Debit Card', 'UPI', 'Net Banking'];
+
+  // Load the animation JSON dynamically
+  useEffect(() => {
+    // Only import the animation in the browser
+    import('../../animation/Animation - 1742460011298.json')
+      .then((animationModule) => {
+        setSuccessAnimation(animationModule.default);
+      })
+      .catch((error) => {
+        console.error("Error loading animation:", error);
+      });
+  }, []);
 
   // If user is login then set userId otherwise null
   useEffect(() => {
-      const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
-        if (user) {
-          setUserId(user.uid);
-        } else {
-          setUserId(null); 
-         if (!auth.currentUser) {
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        setUserId(null); 
+        if (!auth.currentUser) {
           router.replace('/');
-         return;
+          return;
         }
-        }
-        setLoading(false);
-      });
-  
-      return () => unsubscribe();
-    }, []);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router, auth]);
 
   // Fetch the orders data from firestore to find orderId
   useEffect(() => {
@@ -169,7 +190,10 @@ const CheckoutPage = () => {
           });
         }
 
-        localStorage.removeItem('lastOrderId');
+        // Use sessionStorage instead of localStorage for better SSR compatibility
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('lastOrderId');
+        }
   
         // Clear the cart
         const cartRef = doc(db, 'cart', order.userId);
@@ -224,11 +248,6 @@ const CheckoutPage = () => {
             </div>
           ))}
 
-          {/* <div className="flex justify-between font-bold text-lg p-4 pr-10">
-            <p>Total:</p>
-            <p>₹{totalAmount}</p>
-          </div> */}
-
           {/* Popover will be open when user click on Proceed to Payment button */}
           <Dialog open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
             <DialogTrigger asChild>
@@ -278,7 +297,7 @@ const CheckoutPage = () => {
       </div>
 
       {/* After payment will be success */}
-      {paymentSuccess && (
+      {paymentSuccess && successAnimation && (
         <div className="fixed inset-0 bg-gray-200 flex justify-center items-center">
           <div className="bg-white w-96 p-6 rounded-lg shadow-lg flex flex-col items-center">
             <div className='flex justify-between items-center mb-2'>
@@ -300,6 +319,19 @@ const CheckoutPage = () => {
         </div>
       )}
     </div>
+  );
+}
+
+// Main checkout page component
+const CheckoutPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-16 w-16 border-4 border-gray-300 border-t-green-700 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 };
 
