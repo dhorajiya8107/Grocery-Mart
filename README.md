@@ -10,7 +10,7 @@ Grocery Mart is an online grocery store where users can browse products, add the
 ---
 
 **GitHub Repository**  
-👉 [GitHub Repo](https://github.com/dhorajiya8107/Grocery-Mart)  
+👉 [GitHub Repo]((https://github.com/dhorajiya8107/Grocery-Mart-Firebase)  
 
 ---
 
@@ -41,4 +41,4 @@ The project follows a component-based architecture using Next.js for server-side
 
 1. **Clone the Repository**  
 ```bash
-git clone https://github.com/dhorajiya8107/Grocery-Mart.git
+git clone https://github.com/dhorajiya8107/Grocery-Mart-Firebase.git
