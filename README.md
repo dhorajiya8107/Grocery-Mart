@@ -10,7 +10,7 @@ Grocery Mart is an online grocery store where users can browse products, add the
 ---
 
 **GitHub Repository**  
-👉 [GitHub Repo]((https://github.com/dhorajiya8107/Grocery-Mart-Firebase)  
+👉 [GitHub Repo](https://github.com/dhorajiya8107/Grocery-Mart-Firebase)  
 
 ---
 
